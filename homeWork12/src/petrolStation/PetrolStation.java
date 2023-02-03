@@ -1,50 +1,31 @@
 package petrolStation;
 
-import java.util.concurrent.Semaphore;
+import java.util.Random;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class PetrolStation {
-    public static volatile double amount = 10000;
-    private static volatile Boolean mutex = true;
+    AtomicInteger amount = new AtomicInteger(10000);
+    public static ExecutorService executor = Executors.newFixedThreadPool(3);
 
-    public void doRefuel(float requestFuel) throws InterruptedException {
-        synchronized (mutex) {
-            if (amount >= requestFuel) {
-                Thread.sleep(5000);
-                amount -= requestFuel;
-            } else {
-                System.out.println("Sorry! We are out of fuel.");
+    public synchronized void doRefuel(float requestedFuel) {
+        executor.execute(() -> {
+            try {
+                Thread.sleep(3000 + new Random().nextInt(7000));
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
-        }
+            if (amount.floatValue() >= requestedFuel) {
+                fuelSubtraction(amount, requestedFuel);
+            } else {
+                System.out.println("Sorry! We are out of fuel. Current fuel is: " + amount);
+            }
+        });
+    }
 
-        System.out.println(amount);
+    public static synchronized void fuelSubtraction(AtomicInteger amount, float requestedFuel) {
+        amount.addAndGet((int) -requestedFuel);
     }
 }
 
-class PetrolThread implements Runnable {
-    PetrolStation petrol;
-    Semaphore semaphore;
-    float requestFuel;
 
-    PetrolThread(PetrolStation petrol, Semaphore semaphore, float requestFuel) {
-        this.petrol = petrol;
-        this.semaphore = semaphore;
-        this.requestFuel = requestFuel;
-    }
-
-    @Override
-    public void run() {
-        try {
-            semaphore.acquire();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
-        try {
-            petrol.doRefuel(requestFuel);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
-        semaphore.release();
-    }
-}
