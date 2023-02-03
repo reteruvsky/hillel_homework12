@@ -1,14 +1,18 @@
 package petrolStation;
 
-import java.util.concurrent.Semaphore;
-
 public class App {
-    public static void main(String[] args) {
-        PetrolStation petrol = new PetrolStation();
-        Semaphore semaphore = new Semaphore(3, true);
+    public static void main(String[] args) throws InterruptedException {
+        PetrolStation petrolStation = new PetrolStation();
 
-        new Thread(new PetrolThread(petrol, semaphore, 50)).start();
-        new Thread(new PetrolThread(petrol, semaphore, 100)).start();
-        new Thread(new PetrolThread(petrol, semaphore, 150)).start();
+        petrolStation.doRefuel(35);
+        petrolStation.doRefuel(35);
+        petrolStation.doRefuel(35);
+        petrolStation.doRefuel(35);
+        petrolStation.doRefuel(35);
+
+        PetrolStation.executor.shutdown();
+
+        Thread.sleep(12500);
+        System.out.println("Remaining fuel at the station: " + petrolStation.atomicInteger + " liters");
     }
 }
